@@ -1,0 +1,50 @@
+
+add these preprocessor definitions to both (debug/release) configurations:
+
+DEBUG=1
+USE_HAL_DRIVER
+STM32F103xB
+HAVE_USBCDC=0
+HAVE_UART1=1
+
+
+
+alter the linker script to modify the memory areas (giving us the undocumented
+extra 64 KiB, and reserving the last page for our pseudo-eeprom):
+
+/* Specify the memory areas */
+MEMORY
+{
+RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 20K
+/* HHH I hacked the size */
+/*FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 64K*/
+/*FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K*/
+/*reserve last page for persistent settings*/
+/**/FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 127K/**/
+}
+
+
+
+add these linker options to both (debug/release) 'Miscellaneous' to cause 'library interpositioning' of malloc/free internal to libc to be redirected to our heap implementation:
+
+ -Wl,--wrap,malloc -Wl,--wrap,free -Wl,--wrap,realloc -Wl,--wrap,calloc -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_calloc_r
+
+
+add these lines in the bottom 'USER CODE' section in inc/FreeRTOSConfig.h:
+
+//override memory selection made in STM32CubeMX, and explicitly support
+//FreeRTOS dynamic memory management.  However, we will be providing our own
+//heap implementation (derived from heap4.c, but with realloc implemented)
+#undef configAPPLICATION_ALLOCATED_HEAP
+#define configAPPLICATION_ALLOCATED_HEAP 1
+
+#undef configMALLOC_FILL
+#define configMALLOC_FILL 1
+
+
+run 'fixups.bat' to apply some patches.  Unfortunately, not all these changes are in USER code sections, and so they will get overwritten if you regenerate from STM32CubeMX.  Moreover, you need to reevaluate these changes with new firmware updates, possibly porting them forward (it's getting easier, though).
+
+Also note that in the 'F1 CubeMX firmware, you will need to reset the 'optimization' options every time you re-generate (they will be reset back to -O2 for both debug and release).
+
+/after/ you build and 'Debug As... Ac6 STM32 C/C++ Application', a debug configuration file will be generated.  After this has been done the first time, you can then go to 'Debug Configurations...' and on the 'Startup' tab, near the bottom, is setting in 'Runtime Options' named 'Set breakpoint at:' that you can uncheck to get rid of the automatically generated breakpoint at the start of main.
+
