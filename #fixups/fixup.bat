@@ -13,3 +13,13 @@ copy heap_x.c.MyHeap ..\src\heap_x.c
 @rem reserve the last page for our pseudo-eeprom for persistent settings
 @rem really only need to do this once
 copy STM32F103C8Tx_FLASH.ld.MyLinkerScript ..\STM32F103C8Tx_FLASH.ld
+
+@rem apply the hacks to the CubeMX USB middleware
+del ..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h
+copy usbd_cdc.h.MyCDCExt ..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h
+
+del ..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Src\usbd_cdc.c
+copy usbd_cdc.c.MyCDCExt ..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Src\usbd_cdc.c
+
+del ..\Src\usbd_cdc_if.c
+copy usbd_cdc_if.c.MyCDCExt ..\Src\usbd_cdc_if.c

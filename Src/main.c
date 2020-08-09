@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -296,6 +297,7 @@ void SystemClock_Config(void)
   
   }
   LL_SetSystemCoreClock(72000000);
+  LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_1_5);
 }
 
 /**
@@ -501,11 +503,11 @@ void __startWorkerTasks ( void )
 //miscellaneous hooks of our creation
 
 
-//in this logic, we prefer USART1 over USBCDC
-#if HAVE_UART1
-#define PREFER_USART1 1
-#elif HAVE_USBCDC
+//in this logic, we prefer USBCDC over USART1
+#if HAVE_USBCDC
 #define PREFER_USBCDC 1
+#elif HAVE_UART1
+#define PREFER_USART1 1
 #endif
 
 
@@ -610,7 +612,9 @@ void StartDefaultTask(void const * argument)
 {
     
     
-    
+                 
+  /* init code for USB_DEVICE */
+  MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
 
