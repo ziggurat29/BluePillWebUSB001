@@ -28,6 +28,7 @@
 #if HAVE_USBCDC
 #include "usbd_cdc.h"	//just for the XXX_USBCDC_PresenceHack()
 #endif
+#include "tusb.h"	//XXX
 #include "system_interfaces.h"
 #include "serial_devices.h"
 #include "util_circbuff2.h"
@@ -613,6 +614,9 @@ void StartDefaultTask(void const * argument)
     
 
   /* USER CODE BEGIN 5 */
+
+	//init TinyUSB
+	tusb_init();
 
 	//crank up serial ports
 #if HAVE_UART1
