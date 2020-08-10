@@ -4,7 +4,6 @@
 
 #include "lamps.h"
 #include "main.h"
-#include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
 
 #include "task_notification_bits.h"
@@ -22,11 +21,11 @@ extern osThreadId defaultTaskHandle;	//in main.c
 //'on' status for each lamp
 
 //various lights
-void _ledOnGn ( void ) { HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET); }
+void _ledOnGn ( void ) { LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin); }
 
-void _ledOffGn ( void ) { HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET); }
+void _ledOffGn ( void ) { LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin); }
 
-void _ledToggleGn ( void ) { HAL_GPIO_TogglePin (LED2_GPIO_Port, LED2_Pin); }
+void _ledToggleGn ( void ) { LL_GPIO_TogglePin (LED2_GPIO_Port, LED2_Pin); }
 
 
 //diagnostic LED start times and durations
