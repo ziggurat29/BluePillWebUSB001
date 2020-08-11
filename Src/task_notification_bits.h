@@ -36,6 +36,7 @@ enum TaskNotificationBits
 
 	//bits for the default process
 	TNB_LIGHTSCHANGED = 0x00010000,		//the lights have changed
+	TNB_DEF_USB = 0x00020000,		//a USB message has been enqueued
 
 	//bits for the monitor; the lower 16 bits are a parameter value for
 	//notifications that take a parameter, so be careful about how you

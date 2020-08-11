@@ -25,10 +25,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#if HAVE_USBCDC
-#include "usbd_cdc.h"	//just for the XXX_USBCDC_PresenceHack()
-#endif
-#include "tusb.h"	//XXX
+#include "tusb.h"
 #include "system_interfaces.h"
 #include "serial_devices.h"
 #include "util_circbuff2.h"
@@ -171,24 +168,6 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-#if HAVE_USBCDC
-	//if you get a linker fail on the following, it is because some manual
-	//changes to:
-	//  .\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h
-	//  .\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Src\usbd_cdc.c
-	//  .\Src\usbd_cdc_if.c
-	//must be applied.  There are backups of those files to help with that.
-	//This has to be done manually, because the changes are in tool generated
-	//code that gets overwritten when you re-run STM32CubeMX.  The nature of
-	//those changes are such that when they are overwritten, you will still
-	//be able to build but stuff won't work at runtime.  This hack will cause
-	//the build to fail if you forget to merge those changes back on, thus
-	//prompting you to do so.
-	//There is a #fixups/fixup.bat to help with this.
-	//Sorry for the inconvenience, but I don't think there is any better way
-	//of making it obvious that this chore simply must be done.
-	XXX_USBCDC_PresenceHack();	//this does nothing real; do not delete
-#endif
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -203,7 +182,15 @@ int main(void)
   MX_RTC_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+	// USB Pins
+	// Configure USB DM and DP pins.
+	LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = LL_GPIO_PIN_11 | LL_GPIO_PIN_12;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+	LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	// USB Clock enable
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USB);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -598,6 +585,28 @@ void vApplicationMallocFailedHook(void)
 
 
 
+//====================================================
+// Forward USB interrupt events to TinyUSB IRQ Handler
+
+
+void USB_HP_IRQHandler(void)
+{
+	tud_int_handler(0);
+}
+
+
+void USB_LP_IRQHandler(void)
+{
+	tud_int_handler(0);
+}
+
+
+void USBWakeUp_IRQHandler(void)
+{
+	tud_int_handler(0);
+}
+
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -692,6 +701,11 @@ void StartDefaultTask(void const * argument)
 			if ( ulNotificationValue & TNB_LIGHTSCHANGED )
 			{
 				//YYY could do something, but we don't need to
+			}
+			if ( ulNotificationValue & TNB_DEF_USB )
+			{
+				tud_task();	//process the device stack
+				//XXX cdc_task();	//??? we implement?
 			}
 		}
 		else	//timeout on wait

@@ -24,6 +24,13 @@
  * This file is part of the TinyUSB stack.
  */
 
+/*HHH this is a modified version from the original in the TinyUSB src/osal
+In particular, we change 
+*  osal_queue_receive() changed to non-blocking (via timeout)
+*  osal_queue_send() will send a task notification to the servicing task
+  In our case, we will simply have carnal knowledge of the 'default' task
+  where we handle the queued items and call tud_task() to process them
+*/
 #ifndef _TUSB_OSAL_FREERTOS_H_
 #define _TUSB_OSAL_FREERTOS_H_
 
@@ -36,6 +43,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//HHH
+#include "../task_notification_bits.h"
+extern TaskHandle_t defaultTaskHandle;	//in main.c
 
 //--------------------------------------------------------------------+
 // TASK API
@@ -136,19 +147,33 @@ static inline osal_queue_t osal_queue_create(osal_queue_def_t* qdef)
 
 static inline bool osal_queue_receive(osal_queue_t qhdl, void* data)
 {
-  return xQueueReceive(qhdl, data, portMAX_DELAY);
+//HHH this is changed to be non-blocking so as to better work with the task notification approach
+//  return xQueueReceive(qhdl, data, portMAX_DELAY);
+  return xQueueReceive(qhdl, data, 0);
 }
 
 static inline bool osal_queue_send(osal_queue_t qhdl, void const * data, bool in_isr)
 {
   if ( !in_isr )
   {
-    return xQueueSendToBack(qhdl, data, OSAL_TIMEOUT_WAIT_FOREVER) != 0;
+//HHH
+//    return xQueueSendToBack(qhdl, data, OSAL_TIMEOUT_WAIT_FOREVER) != 0;
+    BaseType_t res = xQueueSendToBack(qhdl, data, OSAL_TIMEOUT_WAIT_FOREVER) != 0;
+    if ( res )
+    {
+        xTaskNotify ( defaultTaskHandle, TNB_DEF_USB, eSetBits );
+    }
+    return res;
   }
   else
   {
     BaseType_t xHigherPriorityTaskWoken;
     BaseType_t res = xQueueSendToBackFromISR(qhdl, data, &xHigherPriorityTaskWoken);
+//HHH
+    if ( 0 != res )
+    {
+        xTaskNotifyFromISR ( defaultTaskHandle, TNB_DEF_USB, eSetBits, &xHigherPriorityTaskWoken );
+    }
 
 #if CFG_TUSB_MCU == OPT_MCU_ESP32S2
     if ( xHigherPriorityTaskWoken ) portYIELD_FROM_ISR();
