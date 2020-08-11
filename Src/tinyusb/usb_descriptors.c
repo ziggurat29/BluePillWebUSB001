@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  *
  */
-
+//HHH this we modify for our project's device descriptor
 #include "tusb.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
@@ -51,15 +51,15 @@ tusb_desc_device_t const desc_device =
     .bDeviceProtocol    = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
-    .idVendor           = 0xCafe,
-    .idProduct          = USB_PID,
-    .bcdDevice          = 0x0100,
+    .idVendor           = 1155,	///< Vendor ID (assigned by the USB-IF).
+    .idProduct          = 22336,	///< Product ID (assigned by the manufacturer).
+    .bcdDevice          = 0x0200,	///< Device release number in binary-coded decimal.
 
-    .iManufacturer      = 0x01,
-    .iProduct           = 0x02,
-    .iSerialNumber      = 0x03,
+    .iManufacturer      = 0x01,		///< Index of string descriptor describing manufacturer.
+    .iProduct           = 0x02,		///< Index of string descriptor describing product.
+    .iSerialNumber      = 0x03,		///< Index of string descriptor describing the device's serial number.
 
-    .bNumConfigurations = 0x01
+    .bNumConfigurations = 0x01		///< Number of possible configurations.
 };
 
 // Invoked when received GET DEVICE DESCRIPTOR
@@ -134,10 +134,11 @@ uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
 char const* string_desc_arr [] =
 {
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
-  "TinyUSB",                     // 1: Manufacturer
-  "TinyUSB Device",              // 2: Product
+  "STMicroelectronics",          // 1: Manufacturer
+  "STM32 Virtual ComPort",       // 2: Product
+//XXX III
   "123456",                      // 3: Serials, should use chip ID
-  "TinyUSB CDC",                 // 4: CDC Interface
+  "CDC Interface",               // 4: CDC Interface
 };
 
 static uint16_t _desc_str[32];
@@ -150,10 +151,20 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 
   uint8_t chr_count;
 
-  if ( index == 0)
+  if ( index == 0)	//special case of 0 is language id
   {
     memcpy(&_desc_str[1], string_desc_arr[0], 2);
     chr_count = 1;
+/*
+  }else if ( 3 == index )	//special case of 3 is serial number (from chip id)
+  {
+//XXX III
+		uint32_t deviceserial0, deviceserial1, deviceserial2;
+		//stm32f1xx_ll_utils.h 
+		deviceserial0 = LL_GetUID_Word0();
+		deviceserial1 = LL_GetUID_Word1();
+		deviceserial2 = LL_GetUID_Word2();
+*/
   }else
   {
     // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
