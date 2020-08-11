@@ -174,7 +174,8 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+	//USB clock selection
+	MODIFY_REG(RCC->CFGR, RCC_CFGR_USBPRE, (uint32_t)(0));	//RCC_USBCLKSOURCE_PLL_DIV1_5
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
